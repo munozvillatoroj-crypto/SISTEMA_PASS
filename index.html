@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0F172A">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Sistema PAS Alimentos — Escuela</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- Chart.js y SheetJS (Excel) desde CDN — solo se necesitan la primera vez o con internet -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+
+<!-- ========== LOGIN ========== -->
+<div class="login-wrap" id="loginScreen">
+  <div class="login-card">
+    <div style="text-align:center;font-size:2rem;margin-bottom:.5rem">🍽️</div>
+    <h2>INICIAR SESIÓN</h2>
+    <p class="sub">Sistema de Inventario PAS — Escuela</p>
+    <form id="formLogin">
+      <label>Usuario</label>
+      <input type="text" id="loginUser" placeholder="Usuario" required autocomplete="username" value="admin">
+      <label>Contraseña</label>
+      <input type="password" id="loginPass" placeholder="Contraseña" required autocomplete="current-password" value="admin123">
+      <button type="submit" class="btn-login">Ingresar al Sistema</button>
+      <p class="login-error" id="loginError">Usuario o contraseña incorrectos</p>
+    </form>
+    <p style="text-align:center;font-size:.75rem;color:#64748B;margin-top:1.2rem">
+      Por defecto: <b>admin</b> / <b>admin123</b>
+    </p>
+  </div>
+</div>
+
+<!-- ========== APP ========== -->
+<div class="app" id="app">
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">🍽️ <span>PAS Alimentos</span></div>
+    <nav class="sidebar-nav">
+      <div class="nav-item active" data-view="dashboard">📊 <span>Dashboard</span></div>
+      <div class="nav-item" data-view="entradas">📥 <span>Ingresar Entradas</span></div>
+      <div class="nav-item" data-view="consumo">🍳 <span>Consumo Diario</span></div>
+      <div class="nav-item" data-view="bodega">📦 <span>Existencia Bodega</span></div>
+      <div class="nav-item" data-view="proveedores">📇 <span>Proveedores</span></div>
+      <div class="nav-item" data-view="reportes">📋 <span>Reportes de Auditoría</span></div>
+      <div class="nav-item" data-view="bitacora">📖 <span>Bitácora</span></div>
+      <div class="nav-item" data-view="datos">💾 <span>Base Excel</span></div>
+    </nav>
+    <div class="nav-item logout" id="btnLogout">🚪 <span>Cerrar Sesión</span></div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <button type="button" class="btn-menu" id="btnMenu" aria-label="Abrir menú">☰</button>
+      <h1 id="pageTitle">Dashboard</h1>
+      <div class="user">👤 <span id="userLabel">admin</span></div>
+    </header>
+
+    <div class="content">
+
+      <!-- DASHBOARD -->
+      <section class="view active" id="view-dashboard">
+        <div class="banner banner-warn" id="monthBanner" style="display:none"></div>
+        <div class="kpi-row">
+          <div class="kpi"><div><div class="lbl">Total Alimentos</div><div class="num" id="kpiProductos">0</div></div><div>🥣</div></div>
+          <div class="kpi"><div><div class="lbl">Stock Mínimo</div><div class="num warn" id="kpiStockBajo">0</div></div><div>⚠️</div></div>
+          <div class="kpi"><div><div class="lbl">Prod. Vencidos</div><div class="num danger" id="kpiVencidos">0</div></div><div>📅</div></div>
+          <div class="kpi"><div><div class="lbl">Usuarios</div><div class="num" id="kpiUsuarios">0</div></div><div>👥</div></div>
+        </div>
+        <div class="grid-2">
+          <div class="card">
+            <h3>Balance mensual: Entradas vs Consumos</h3>
+            <canvas id="chartMovimientos" height="140"></canvas>
+          </div>
+          <div class="card">
+            <h3>Productos por categoría</h3>
+            <canvas id="chartCategorias" height="180"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- ENTRADAS -->
+      <section class="view" id="view-entradas">
+        <div class="card" style="max-width:520px">
+          <h3>📥 Registrar entrada de mercancía</h3>
+          <p style="font-size:.85rem;color:#64748B;margin-bottom:1rem">Al guardar, el stock aumenta y queda en bitácora.</p>
+          <form id="formEntrada">
+            <div style="margin-bottom:.85rem">
+              <label class="field">Producto</label>
+              <select id="entProducto" required></select>
+            </div>
+            <div class="form-grid">
+              <div>
+                <label class="field">Cantidad</label>
+                <input type="number" id="entCantidad" min="0.01" step="any" required>
+              </div>
+              <div>
+                <label class="field">Fecha de entrada</label>
+                <input type="date" id="entFecha" required>
+              </div>
+            </div>
+            <div style="margin: .85rem 0">
+              <label class="field">Fecha de vencimiento (opcional)</label>
+              <input type="date" id="entVence">
+            </div>
+            <button type="submit" class="btn btn-primary">✓ Registrar Entrada</button>
+          </form>
+        </div>
+      </section>
+
+      <!-- CONSUMO -->
+      <section class="view" id="view-consumo">
+        <div class="card" style="max-width:520px">
+          <h3>🍳 Registrar consumo diario</h3>
+          <p style="font-size:.85rem;color:#64748B;margin-bottom:1rem">No permite consumir más de lo disponible en stock.</p>
+          <form id="formConsumo">
+            <div style="margin-bottom:.85rem">
+              <label class="field">Producto</label>
+              <select id="conProducto" required></select>
+            </div>
+            <div class="form-grid">
+              <div>
+                <label class="field">Cantidad</label>
+                <input type="number" id="conCantidad" min="0.01" step="any" required>
+              </div>
+              <div>
+                <label class="field">Fecha</label>
+                <input type="date" id="conFecha" required>
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary" style="margin-top:1rem">✓ Registrar Consumo</button>
+          </form>
+        </div>
+      </section>
+
+      <!-- BODEGA -->
+      <section class="view" id="view-bodega">
+        <div class="grid-2 bodega-grid">
+          <div class="card" style="border-left:4px solid #2563EB">
+            <h3>➕ Registrar nuevo alimento</h3>
+            <form id="formProducto">
+              <div style="margin-bottom:.6rem">
+                <label class="field">Código</label>
+                <input type="text" id="prodCodigo" placeholder="Ej. ALM-001" required>
+              </div>
+              <div style="margin-bottom:.6rem">
+                <label class="field">Nombre</label>
+                <input type="text" id="prodNombre" placeholder="Ej. Frijol Rojo" required>
+              </div>
+              <div class="form-grid" style="margin-bottom:.6rem">
+                <div>
+                  <label class="field">Categoría</label>
+                  <select id="prodCategoria"></select>
+                </div>
+                <div>
+                  <label class="field">Proveedor</label>
+                  <select id="prodProveedor"></select>
+                </div>
+              </div>
+              <div class="form-grid" style="margin-bottom:.6rem">
+                <div>
+                  <label class="field">Unidad</label>
+                  <select id="prodUnidad">
+                    <option>Libra</option><option>Kilogramo</option><option>Litro</option>
+                    <option>Unidad</option><option>Bolsa</option><option>Caja</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="field">Stock inicial</label>
+                  <input type="number" id="prodStock" min="0" step="any" value="0">
+                </div>
+              </div>
+              <div class="form-grid" style="margin-bottom:.85rem">
+                <div>
+                  <label class="field">Stock mínimo</label>
+                  <input type="number" id="prodMinimo" min="0" step="any" value="5">
+                </div>
+                <div>
+                  <label class="field">Vencimiento</label>
+                  <input type="date" id="prodVence">
+                </div>
+              </div>
+              <button type="submit" class="btn btn-primary" style="width:100%">Guardar Producto</button>
+            </form>
+          </div>
+          <div class="card">
+            <h3>📦 Inventario actual</h3>
+            <div class="table-wrap">
+              <table class="data" id="tablaProductos">
+                <thead>
+                  <tr><th>Código</th><th>Producto</th><th>Stock</th><th>Mín.</th><th>Unidad</th><th>Vence</th><th>Estado</th></tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PROVEEDORES -->
+      <section class="view" id="view-proveedores">
+        <div class="grid-2">
+          <div class="card">
+            <h3>Nuevo proveedor</h3>
+            <form id="formProveedor">
+              <div style="margin-bottom:.6rem">
+                <label class="field">Nombre</label>
+                <input type="text" id="provNombre" required>
+              </div>
+              <div style="margin-bottom:.6rem">
+                <label class="field">Teléfono</label>
+                <input type="text" id="provTel">
+              </div>
+              <div style="margin-bottom:.85rem">
+                <label class="field">Email</label>
+                <input type="email" id="provEmail">
+              </div>
+              <button type="submit" class="btn btn-primary">Guardar</button>
+            </form>
+          </div>
+          <div class="card">
+            <h3>Listado</h3>
+            <div class="table-wrap">
+              <table class="data" id="tablaProveedores">
+                <thead><tr><th>ID</th><th>Nombre</th><th>Teléfono</th><th>Email</th></tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- REPORTES -->
+      <section class="view" id="view-reportes">
+        <div class="card" style="border-left:5px solid #2563EB">
+          <div class="card-header-bar">
+            <div>
+              <h3 style="margin:0">📋 Reportes de Auditoría</h3>
+              <p style="font-size:.85rem;color:#64748B;margin-top:.35rem">
+                El archivo se <b>descarga automáticamente</b> en esta PC. Ideal para cierre diario y mensual.
+              </p>
+            </div>
+            <span class="badge badge-ok">Descarga directa</span>
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="card">
+            <h3 style="background:#2563EB;color:#fff;padding:.65rem 1rem;border-radius:8px;margin:-1.25rem -1.25rem 1rem -1.25rem">
+              📅 Reporte diario
+            </h3>
+            <p style="font-size:.85rem;color:#64748B;margin-bottom:1rem">
+              Incluye entradas, consumos, stock y bitácora del día seleccionado.
+            </p>
+            <label class="field">Fecha a auditar</label>
+            <input type="date" id="repFechaDiaria" style="margin-bottom:1rem">
+            <button class="btn btn-primary btn-lg" id="btnReporteDiario" style="width:100%;margin-bottom:.5rem">
+              ⬇ Generar y Descargar reporte del día
+            </button>
+            <button class="btn btn-outline" id="btnReporteHoy" style="width:100%">
+              ⚡ Descargar reporte de HOY
+            </button>
+          </div>
+          <div class="card">
+            <h3 style="background:#0F172A;color:#fff;padding:.65rem 1rem;border-radius:8px;margin:-1.25rem -1.25rem 1rem -1.25rem">
+              📆 Reportes mensuales
+            </h3>
+            <p style="font-size:.85rem;color:#64748B;margin-bottom:1rem">
+              Haga clic en el mes. Se genera el consolidado de <b>todo lo que entró y salió</b> ese mes.
+              El sistema también avisa automáticamente el <b>día 30 o 31</b> (último día del mes).
+            </p>
+            <div class="months-grid" id="monthsGrid"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- BITÁCORA -->
+      <section class="view" id="view-bitacora">
+        <div class="card">
+          <h3>📖 Bitácora de seguridad</h3>
+          <div class="table-wrap">
+            <table class="data" id="tablaBitacora">
+              <thead>
+                <tr><th>Fecha / Hora</th><th>Usuario</th><th>Acción</th><th>Origen</th></tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- BASE EXCEL -->
+      <section class="view" id="view-datos">
+        <div class="banner banner-info">
+          <div>
+            <b>Base de datos en Excel (sin XAMPP)</b><br>
+            Los datos se guardan en este navegador. Use <b>Exportar a Excel</b> para respaldo en archivo .xlsx
+            y <b>Importar Excel</b> para restaurar o llevar los datos a otra PC. Recomendado: exportar al final de cada jornada.
+          </div>
+        </div>
+        <div class="kpi-row">
+          <div class="kpi"><div><div class="lbl">Productos</div><div class="num" id="statProductos">0</div></div></div>
+          <div class="kpi"><div><div class="lbl">Entradas</div><div class="num" id="statEntradas">0</div></div></div>
+          <div class="kpi"><div><div class="lbl">Consumos</div><div class="num" id="statConsumos">0</div></div></div>
+          <div class="kpi"><div><div class="lbl">Bitácora</div><div class="num" id="statBitacora">0</div></div></div>
+        </div>
+        <div class="card">
+          <h3>💾 Respaldo y restauración</h3>
+          <div class="toolbar">
+            <button class="btn btn-success" id="btnExportExcel">⬇ Exportar todo a Excel (.xlsx)</button>
+            <button class="btn btn-primary" id="btnImportExcel">⬆ Importar desde Excel</button>
+            <button class="btn btn-outline" id="btnBackupAhora">💾 Respaldo rápido ahora</button>
+            <input type="file" id="fileExcel" class="hidden-file" accept=".xlsx,.xls">
+          </div>
+          <p style="font-size:.85rem;color:#64748B;margin-top:.75rem">
+            El Excel incluye hojas: <b>Productos, Entradas, Consumos, Proveedores, Categorias, Bitacora, Usuarios</b>.
+            Guarde el archivo en una carpeta segura de la escuela (USB o disco compartido).
+          </p>
+        </div>
+      </section>
+
+    </div>
+
+    <footer class="app-footer">
+      Sistema PAS Alimentos — Escuela · Funciona sin XAMPP · Datos en Excel / este navegador
+    </footer>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,80 @@
+================================================================================
+  SISTEMA PAS ALIMENTOS — VERSIÓN EXCEL (SIN XAMPP)
+  Inventario para escuela · Una sola carpeta · HTML + CSS + JS
+================================================================================
+
+¿POR QUÉ ESTA VERSIÓN?
+----------------------
+XAMPP se caía y hacía perder credibilidad. Esta versión:
+  • No necesita Apache, MySQL ni PHP
+  • Se abre con doble clic en index.html (Chrome, Edge o Firefox)
+  • Guarda los datos en el navegador + respaldo en archivo Excel (.xlsx)
+  • Genera reportes diarios y mensuales que se DESCARGAN en la PC
+  • El último día del mes (30 o 31) AVISA y puede generar el reporte mensual
+    con TODO lo que entró y salió, inventario y detalle
+
+CÓMO USARLO
+-----------
+1. Copie toda la carpeta "PAS_Alimentos_Excel" a la PC del puesto
+   (USB, Escritorio, Documentos, etc.)
+
+2. Abra el archivo index.html con el navegador
+   (clic derecho → Abrir con → Chrome / Edge)
+
+3. Usuario por defecto:
+      Usuario:    admin
+      Contraseña: admin123
+
+4. Trabaje normalmente:
+   - Bodega → registrar productos
+   - Entradas → cuando llega mercancía
+   - Consumo → cuando se usa
+   - Reportes → diario o mensual (se descarga solo)
+
+5. Al final del día (recomendado):
+   Menú "Base Excel" → "Exportar todo a Excel"
+   Guarde el archivo .xlsx en una carpeta segura o USB de la escuela.
+
+REPORTE MENSUAL AUTOMÁTICO
+--------------------------
+El día 30 o 31 (último día del mes), al entrar al sistema aparece un aviso
+preguntando si desea generar el reporte mensual. Ese reporte incluye:
+  • Inventario completo actual
+  • Todas las ENTRADAS del mes
+  • Todos los CONSUMOS del mes
+  • Totales y productos con stock bajo
+
+También puede generarlo manualmente en "Reportes de Auditoría" haciendo
+clic en el mes deseado.
+
+ARCHIVOS DE LA CARPETA
+----------------------
+  index.html   → pantalla principal (abrir este)
+  style.css    → diseño
+  app.js       → lógica del sistema
+  LEEME.txt    → este archivo
+
+INTERNET
+--------
+La primera vez (o si limpia caché) necesita internet para cargar:
+  - Chart.js (gráficos del Dashboard)
+  - SheetJS (leer/escribir Excel)
+
+Después el sistema funciona offline para operaciones diarias.
+Los reportes HTML se generan siempre, sin internet.
+
+RECOMENDACIONES PARA LA ESCUELA
+-------------------------------
+  • Exportar a Excel todos los días al cierre
+  • Guardar una copia del Excel en USB o carpeta compartida
+  • No borrar historial: use movimientos correctivos
+  • Cambiar la contraseña de admin (en el Excel hoja Usuarios, o pida ayuda)
+  • Usar siempre el MISMO navegador y la MISMA cuenta de Windows en el puesto
+    (los datos están en ese navegador hasta que exporte/importe Excel)
+
+Si cambia de PC: en la PC vieja exporte Excel → en la PC nueva abra el sistema
+e importe ese Excel.
+
+================================================================================
+  BitNovaSV · Sistema PAS Alimentos · Octubre 2026
+================================================================================
